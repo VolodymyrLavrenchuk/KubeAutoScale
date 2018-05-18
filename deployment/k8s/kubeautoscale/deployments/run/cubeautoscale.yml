@@ -1,0 +1,44 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kube-auto-scale
+  namespace: monitoring
+  labels:
+    run: kube-auto-scale
+spec:
+  template:
+    metadata:
+      labels:
+        run: kube-auto-scale
+      name: kube-auto-scale
+    spec:
+      volumes:
+        - name: azure-json
+          hostPath:
+            path: /etc/kubernetes/azure.json
+      nodeSelector:
+        role: "worker"
+      containers:
+      - image: vlavrenc/kube-auto-scale:1.0.0
+        imagePullPolicy: Always
+        env:
+          - name: SLEEP_INTERVAL
+            value: '{{ sleep_interval }}'
+          - name: AZURE_STORAGE_ACCOUNT
+            valueFrom:
+              secretKeyRef:
+                name: azure-storage-account
+                key: azure_storage_account
+          - name: AZURE_STORAGE_ACCOUNT_KEY
+            valueFrom:
+              secretKeyRef:
+                name: azure-storage-account
+                key: azure_storage_account_key
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+        name: es-monitoring
+        volumeMounts:
+          - mountPath: /etc/kubernetes/azure.json
+            name: azure-json
